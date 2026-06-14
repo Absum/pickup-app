@@ -14,6 +14,7 @@ struct ContentView: View {
         case "learn": _selection = State(initialValue: 0)
         case "tuner": _selection = State(initialValue: 1)
         case "metronome": _selection = State(initialValue: 2)
+        case "chords": _selection = State(initialValue: 3)
         default: break
         }
         #endif
@@ -30,6 +31,9 @@ struct ContentView: View {
             MetronomeView()
                 .tag(2)
                 .tabItem { Label("Metronome", systemImage: "metronome") }
+            ChordsView()
+                .tag(3)
+                .tabItem { Label("Chords", systemImage: "guitars.fill") }
         }
         .tint(Theme.teal)
     }

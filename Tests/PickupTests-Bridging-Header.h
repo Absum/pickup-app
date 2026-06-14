@@ -4,3 +4,4 @@
 //
 
 #import "pitch_detector.h"
+#import "chord_detector.h"

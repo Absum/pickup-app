@@ -8,7 +8,8 @@
 import SwiftUI
 
 struct FretboardDiagram: View {
-    let positions: [FretPosition]
+    var positions: [FretPosition]
+    var mutedStrings: [Int] = []
     var maxFret: Int = 4
     var tint: Color = Theme.teal
 
@@ -58,6 +59,17 @@ struct FretboardDiagram: View {
                     let rect = CGRect(x: x - r, y: y - r, width: 2 * r, height: 2 * r)
                     ctx.fill(Path(ellipseIn: rect), with: .color(tint))
                 }
+            }
+
+            // Muted strings: an X above the nut.
+            for s in mutedStrings where s >= 0 && s < cols {
+                let x = leftPad + colGap * CGFloat(s)
+                let y = topPad - 15
+                let d: CGFloat = 5
+                var p = Path()
+                p.move(to: CGPoint(x: x - d, y: y - d)); p.addLine(to: CGPoint(x: x + d, y: y + d))
+                p.move(to: CGPoint(x: x - d, y: y + d)); p.addLine(to: CGPoint(x: x + d, y: y - d))
+                ctx.stroke(p, with: .color(.white.opacity(0.5)), lineWidth: 2)
             }
         }
     }

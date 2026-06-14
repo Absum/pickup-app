@@ -16,9 +16,14 @@ final class AudioEngine {
 
     /// Called on the main queue. nil means "no confident pitch right now".
     var onResult: ((Result?) -> Void)?
+    /// Raw mono samples + sample rate, on the audio thread (for chord chroma).
+    var onSamples: (([Float], Double) -> Void)?
+    /// Skip monophonic pitch detection (e.g. when only chroma is needed).
+    var detectsPitch = true
 
     private let engine = AVAudioEngine()
     private var pitch: PitchEngine?
+    private var currentSampleRate: Double = 44_100
     private let bufferSize: AVAudioFrameCount = 2048
 
     var isRunning: Bool { engine.isRunning }
@@ -32,6 +37,7 @@ final class AudioEngine {
 
         let input = engine.inputNode
         let format = input.inputFormat(forBus: 0)
+        currentSampleRate = format.sampleRate
         pitch = PitchEngine(sampleRate: format.sampleRate)
 
         input.removeTap(onBus: 0)
@@ -56,6 +62,10 @@ final class AudioEngine {
         guard count > 0 else { return }
 
         let samples = Array(UnsafeBufferPointer(start: channelData[0], count: count))
+
+        onSamples?(samples, currentSampleRate)
+        guard detectsPitch else { return }
+
         let estimate = pitch?.process(samples)
         let result = estimate.map { Result(frequency: Double($0.frequency),
                                            clarity: Double($0.clarity)) }
