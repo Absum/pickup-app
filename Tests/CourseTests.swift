@@ -1,0 +1,33 @@
+//
+//  CourseTests.swift
+//  Course structure, unlock chain across courses, and fretted-note content.
+//
+
+import XCTest
+
+final class CourseTests: XCTestCase {
+
+    func testCoursesExist() {
+        XCTAssertEqual(CourseLibrary.all.count, 2)
+        XCTAssertEqual(CourseLibrary.firstContact.lessons.count, 3)
+        XCTAssertEqual(CourseLibrary.firstNotes.lessons.count, 2)
+    }
+
+    func testFirstCourseUnlocked() {
+        XCTAssertTrue(CourseLibrary.isUnlocked(CourseLibrary.firstContact, completed: []))
+    }
+
+    func testSecondCourseLockedUntilFirstContactFinished() {
+        XCTAssertFalse(CourseLibrary.isUnlocked(CourseLibrary.firstNotes, completed: []))
+        // first-notes' first lesson requires "low-to-high" (last of first-contact).
+        XCTAssertTrue(CourseLibrary.isUnlocked(CourseLibrary.firstNotes, completed: ["low-to-high"]))
+    }
+
+    func testFrettedNoteFrequencyAndName() {
+        // Low E string, 1st fret ≈ F2 (87.31 Hz).
+        let step = LessonLibrary.lowENotes.steps[1]
+        XCTAssertEqual(step.frequency, 87.31, accuracy: 0.5)
+        XCTAssertEqual(step.note, "F")
+        XCTAssertEqual(step.position, FretPosition(string: 0, fret: 1))
+    }
+}

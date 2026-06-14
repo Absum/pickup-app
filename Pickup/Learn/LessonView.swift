@@ -1,7 +1,7 @@
 //
 //  LessonView.swift
-//  Guided practice: shows the target note, listens, and gives instant
-//  per-note feedback — green when you hold the right note.
+//  Guided practice: shows the target note + where to play it, listens, and
+//  gives instant per-note feedback — green when you hold the right note.
 //
 
 import SwiftUI
@@ -15,9 +15,11 @@ struct LessonView: View {
         self.onClose = onClose
     }
 
+    private var inTune: Bool { model.feedback == .correct }
+
     var body: some View {
         ZStack {
-            ArcticBackground(glow: model.feedback == .correct || model.isComplete)
+            ArcticBackground(glow: inTune || model.isComplete)
             if model.isComplete { completionView } else { practiceView }
         }
         .preferredColorScheme(.dark)
@@ -32,10 +34,15 @@ struct LessonView: View {
             topBar.padding(.top, 12)
             Spacer()
             targetNote
-            Spacer().frame(height: 20)
+            if let position = model.currentStep.position {
+                FretboardDiagram(positions: [position])
+                    .frame(width: 236, height: 138)
+                    .padding(.top, 14)
+            }
+            Spacer().frame(height: 10)
             detectedLine
             Spacer()
-            prompt.padding(.bottom, 28)
+            prompt.padding(.bottom, 26)
         }
     }
 
@@ -76,28 +83,27 @@ struct LessonView: View {
     }
 
     private var targetNote: some View {
-        let correct = model.feedback == .correct
-        return VStack(spacing: 12) {
+        VStack(spacing: 10) {
             ZStack {
-                if correct {
-                    Circle().fill(Theme.teal.opacity(0.22)).frame(width: 250, height: 250).blur(radius: 44)
+                if inTune {
+                    Circle().fill(Theme.teal.opacity(0.22)).frame(width: 188, height: 188).blur(radius: 40)
                 }
                 Circle()
-                    .stroke(correct ? Theme.teal : .white.opacity(0.12), lineWidth: 3)
-                    .frame(width: 250, height: 250)
-                VStack(spacing: 2) {
+                    .stroke(inTune ? Theme.teal : .white.opacity(0.12), lineWidth: 3)
+                    .frame(width: 188, height: 188)
+                VStack(spacing: 0) {
                     Text(model.currentStep.note)
-                        .font(.custom("Rajdhani-SemiBold", size: 148))
-                        .foregroundStyle(correct ? Theme.teal : .white)
+                        .font(.custom("Rajdhani-SemiBold", size: 110))
+                        .foregroundStyle(inTune ? Theme.teal : .white)
                     Text(model.currentStep.octaveLabel)
-                        .font(Theme.light(18)).tracking(4)
+                        .font(Theme.light(15)).tracking(3)
                         .foregroundStyle(Theme.frost.opacity(0.7))
                 }
             }
             Text(model.currentStep.hint)
                 .font(Theme.body(16)).foregroundStyle(Theme.frost.opacity(0.8))
         }
-        .animation(.snappy, value: model.feedback)
+        .animation(.snappy, value: inTune)
         .animation(.snappy, value: model.currentStep.id)
     }
 
