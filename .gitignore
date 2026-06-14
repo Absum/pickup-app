@@ -5,3 +5,15 @@ node_modules/
 .expo/
 ios/Pods/
 build/
+
+# Secrets / local config (never commit)
+.mcp.json
+.claude/settings.local.json
+
+# Xcode — .xcodeproj is generated from project.yml via `xcodegen generate`
+*.xcodeproj
+*.xcworkspace
+xcuserdata/
+DerivedData/
+*.xcuserstate
+.swiftpm/

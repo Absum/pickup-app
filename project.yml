@@ -1,0 +1,83 @@
+name: Pickup
+options:
+  bundleIdPrefix: fi.absum.pickup
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+  developmentLanguage: en
+  xcodeVersion: "26.0"
+settings:
+  base:
+    # Absum Corporation Oy
+    ORGANIZATIONNAME: Absum Corporation Oy
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    SWIFT_VERSION: "5.0"
+    TARGETED_DEVICE_FAMILY: "1,2" # 1 = iPhone, 2 = iPad (universal)
+    CLANG_CXX_LANGUAGE_STANDARD: "c++17"
+    CLANG_CXX_LIBRARY: "libc++"
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+targets:
+  Pickup:
+    type: application
+    platform: iOS
+    sources:
+      - path: Pickup
+      - path: DSP
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: fi.absum.pickup
+        PRODUCT_NAME: Pickup
+        SWIFT_OBJC_BRIDGING_HEADER: Pickup/Pickup-Bridging-Header.h
+        HEADER_SEARCH_PATHS:
+          - $(SRCROOT)/DSP/include
+        SUPPORTS_MACCATALYST: NO
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+    info:
+      path: Pickup/Info.plist
+      properties:
+        CFBundleDisplayName: Pickup
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSMicrophoneUsageDescription: "Pickup listens through your microphone to hear the notes and chords you play, so it can give you instant feedback as you practice."
+        UILaunchScreen: {}
+        UIApplicationSupportsIndirectInputEvents: true
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UIAppFonts:
+          - Rajdhani-Light.ttf
+          - Rajdhani-Regular.ttf
+          - Rajdhani-Medium.ttf
+          - Rajdhani-SemiBold.ttf
+          - Rajdhani-Bold.ttf
+  PickupTests:
+    type: bundle.unit-test
+    platform: iOS
+    # Logic tests (no TEST_HOST): compile the portable C++ core directly so we
+    # can exercise the pitch detector in isolation against synthetic signals.
+    sources:
+      - path: Tests
+      - path: DSP
+      - path: Pickup/Core/NoteMath.swift
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_OBJC_BRIDGING_HEADER: Tests/PickupTests-Bridging-Header.h
+        HEADER_SEARCH_PATHS:
+          - $(SRCROOT)/DSP/include
+schemes:
+  Pickup:
+    build:
+      targets:
+        Pickup: all
+    test:
+      targets:
+        - PickupTests
+      gatherCoverageData: false
