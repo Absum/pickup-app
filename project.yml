@@ -43,15 +43,11 @@ targets:
         NSMicrophoneUsageDescription: "Pickup listens through your microphone to hear the notes and chords you play, so it can give you instant feedback as you practice."
         UILaunchScreen: {}
         UIApplicationSupportsIndirectInputEvents: true
+        # Portrait-only — the UI is designed for portrait.
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
-          - UIInterfaceOrientationLandscapeLeft
-          - UIInterfaceOrientationLandscapeRight
         UISupportedInterfaceOrientations~ipad:
           - UIInterfaceOrientationPortrait
-          - UIInterfaceOrientationPortraitUpsideDown
-          - UIInterfaceOrientationLandscapeLeft
-          - UIInterfaceOrientationLandscapeRight
         UIAppFonts:
           - Rajdhani-Light.ttf
           - Rajdhani-Regular.ttf
