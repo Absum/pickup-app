@@ -32,6 +32,8 @@ final class TunerViewModel {
 
     private let audio = AudioEngine()
     private var smoothedFrequency: Double = 0
+    private var history: [Double] = []      // recent raw detections, for stabilizing
+    private let historyLength = 8
     private var silenceFrames = 0
 
     init() {
@@ -90,23 +92,38 @@ final class TunerViewModel {
         isListening = false
         reading = nil
         smoothedFrequency = 0
+        history.removeAll()
     }
 
     private func handle(_ result: AudioEngine.Result?) {
         guard let result else {
             silenceFrames += 1
-            if silenceFrames > 8 {
+            if silenceFrames > 6 {
                 reading = nil
                 smoothedFrequency = 0
+                history.removeAll()
             }
             return
         }
         silenceFrames = 0
 
-        // Smooth in log space so cents stays steady but still responsive.
+        // Keep a short window of recent detections.
+        history.append(result.frequency)
+        if history.count > historyLength { history.removeFirst() }
+        guard history.count >= 4 else { return }
+
+        // Reject octave jumps / spurious frames: keep only detections that agree
+        // with the window's median (within 50 cents). Need a majority to update.
+        let median = history.sorted()[history.count / 2]
+        let agreeing = history.filter { abs(1200.0 * log2($0 / median)) < 50.0 }
+        guard agreeing.count >= max(3, history.count / 2) else { return }  // unstable: hold
+
+        // Stable estimate = log-mean of the agreeing frames, then gently smoothed.
+        let logMean = agreeing.reduce(0.0) { $0 + log2($1) } / Double(agreeing.count)
+        let stable = pow(2.0, logMean)
         smoothedFrequency = smoothedFrequency == 0
-            ? result.frequency
-            : exp(log(smoothedFrequency) * 0.7 + log(result.frequency) * 0.3)
+            ? stable
+            : exp(log(smoothedFrequency) * 0.5 + log(stable) * 0.5)
 
         let target = manualString ?? GuitarTuning.nearestString(toFrequency: smoothedFrequency).string
         reading = Reading(string: target,
