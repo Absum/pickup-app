@@ -27,6 +27,18 @@ final class TabHighwayViewModel {
     /// Practice/wait mode: hold each note at the strike line until it's played.
     var waitMode = false
 
+    /// Signed timing error per hit note (seconds; <0 = early, >0 = late), after
+    /// compensating for analysis latency. Drives the timing accuracy score.
+    var timingErrors: [Int: Double] = [:]
+    /// Most recent hit's timing feedback, for the on-strike flash label.
+    var lastTiming: (string: Int, grade: TimingGrade, ms: Int, time: Double)?
+
+    enum TimingGrade { case perfect, early, late }
+
+    /// Pitch detection lags the actual pluck by roughly one analysis window;
+    /// subtract it so an on-the-beat pluck scores ~0. Rough — calibratable.
+    private let timingLatency = 0.085
+
     private let audio = AudioEngine()
     private let preview = TonePlayer()
     private var playedIDs: Set<Int> = []
@@ -46,6 +58,28 @@ final class TabHighwayViewModel {
     var notes: [HighwayNote] { track.notes }
     var total: Int { notes.count }
     var hits: Int { hitIDs.count }
+
+    /// Mean absolute timing error in milliseconds across graded hits.
+    var avgTimingMs: Int {
+        guard !timingErrors.isEmpty else { return 0 }
+        let mean = timingErrors.values.map { abs($0) }.reduce(0, +) / Double(timingErrors.count)
+        return Int((mean * 1000).rounded())
+    }
+
+    /// Timing accuracy 0–100: tight to the beat = 100, ±200 ms = 0.
+    var timingAccuracy: Int {
+        guard !timingErrors.isEmpty else { return 0 }
+        let mean = timingErrors.values.map { abs($0) }.reduce(0, +) / Double(timingErrors.count)
+        return Int((max(0, min(1, 1 - mean / 0.2)) * 100).rounded())
+    }
+
+    /// On average, were hits early or late? (nil when dead-on or no data.)
+    var timingBias: TimingGrade? {
+        guard !timingErrors.isEmpty else { return nil }
+        let mean = timingErrors.values.reduce(0, +) / Double(timingErrors.count)
+        if abs(mean) <= 0.02 { return .perfect }
+        return mean < 0 ? .early : .late
+    }
 
     func seconds(of note: HighwayNote) -> Double {
         note.beat * 60.0 / Double(track.bpm) / max(0.25, speed)
@@ -100,6 +134,8 @@ final class TabHighwayViewModel {
                 }
                 self.hitIDs = []
                 self.flashes = [:]
+                self.timingErrors = [:]
+                self.lastTiming = nil
                 self.finished = false
                 self.currentTime = -2.0          // lead-in before the first note
                 self.lastTick = nil
@@ -181,6 +217,13 @@ final class TabHighwayViewModel {
             if cents < centsTolerance {
                 hitIDs.insert(n.id)
                 flashes[n.string] = currentTime
+                // Grade timing (not meaningful while waitMode holds the note).
+                if !waitMode {
+                    let offset = (currentTime - seconds(of: n)) - timingLatency
+                    timingErrors[n.id] = offset
+                    let grade: TimingGrade = abs(offset) <= 0.05 ? .perfect : (offset < 0 ? .early : .late)
+                    lastTiming = (n.string, grade, Int((offset * 1000).rounded()), currentTime)
+                }
                 break
             }
         }

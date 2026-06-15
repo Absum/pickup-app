@@ -294,6 +294,24 @@ private struct HighwayRunner: View {
                 ctx.stroke(Path(ellipseIn: rect),
                            with: .color(Theme.teal.opacity(0.9 * (1 - p))), lineWidth: 3)
             }
+
+            // Timing verdict for the most recent hit, fading just above the strike.
+            if let hit = model.lastTiming {
+                let age = model.currentTime - hit.time
+                if age >= 0, age < 0.7 {
+                    let alpha = 1 - age / 0.7
+                    let color: Color = hit.grade == .perfect ? Theme.teal : Color(hex: 0xF4B860)
+                    let label: String
+                    switch hit.grade {
+                    case .perfect: label = "PERFECT"
+                    case .early:   label = "EARLY \(abs(hit.ms))ms"
+                    case .late:    label = "LATE \(abs(hit.ms))ms"
+                    }
+                    let lx = min(max(laneX(hit.string), 44), size.width - 44)
+                    ctx.draw(Text(label).font(Theme.title(13)).foregroundColor(color.opacity(alpha)),
+                             at: CGPoint(x: lx, y: strikeY - 46))
+                }
+            }
             // String labels below the strike line
             for s in 0..<lanes {
                 ctx.draw(Text(stringLabels[s]).font(Theme.light(12)).foregroundColor(Theme.frost.opacity(0.5)),
@@ -357,6 +375,15 @@ private struct HighwayRunner: View {
         .buttonStyle(.plain)
     }
 
+    private var timingDetail: String {
+        let ms = model.avgTimingMs
+        switch model.timingBias {
+        case .early: return "AVG \(ms)MS · A TOUCH EARLY"
+        case .late:  return "AVG \(ms)MS · A TOUCH LATE"
+        default:     return "AVG \(ms)MS · DEAD ON"
+        }
+    }
+
     private var results: some View {
         VStack(spacing: 20) {
             Image(systemName: "star.fill").font(.system(size: 64)).foregroundStyle(Theme.teal)
@@ -364,6 +391,17 @@ private struct HighwayRunner: View {
             Text("\(model.hits) / \(model.total)")
                 .font(.custom("Rajdhani-SemiBold", size: 72)).foregroundStyle(.white)
             Text("NOTES HIT").font(Theme.light(12)).tracking(4).foregroundStyle(Theme.frost.opacity(0.7))
+
+            if !model.timingErrors.isEmpty {
+                VStack(spacing: 4) {
+                    Text("TIMING \(model.timingAccuracy)%")
+                        .font(Theme.display(22)).foregroundStyle(Theme.cyan)
+                    Text(timingDetail).font(Theme.light(12)).tracking(3)
+                        .foregroundStyle(Theme.frost.opacity(0.6))
+                }
+                .padding(.top, 4)
+            }
+
             VStack(spacing: 12) {
                 Button { model.restart() } label: {
                     Text("PLAY AGAIN").font(Theme.display(18)).tracking(3)
