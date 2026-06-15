@@ -8,6 +8,7 @@ import SwiftUI
 
 struct LearnHomeView: View {
     @State private var path: [Course] = []
+    @State private var showPlayAlong = false
     private let store = ProgressStore.shared
 
     var body: some View {
@@ -18,6 +19,7 @@ struct LearnHomeView: View {
                     header.padding(.top, 12)
                     ScrollView {
                         VStack(spacing: 16) {
+                            playAlongCard
                             ForEach(CourseLibrary.all) { course in
                                 let unlocked = CourseLibrary.isUnlocked(course, completed: store.completedLessonIDs)
                                 courseCard(course, unlocked: unlocked)
@@ -35,6 +37,9 @@ struct LearnHomeView: View {
             .toolbar(.hidden, for: .navigationBar)
         }
         .tint(Theme.teal)
+        .fullScreenCover(isPresented: $showPlayAlong) {
+            PlayAlongView { showPlayAlong = false }
+        }
         .onAppear {
             #if DEBUG
             if let raw = ProcessInfo.processInfo.environment["PICKUP_COMPLETE"] {
@@ -43,6 +48,9 @@ struct LearnHomeView: View {
             if let id = ProcessInfo.processInfo.environment["PICKUP_COURSE"],
                let course = CourseLibrary.all.first(where: { $0.id == id }) {
                 path = [course]
+            }
+            if ProcessInfo.processInfo.environment["PICKUP_PLAYALONG"] != nil {
+                showPlayAlong = true
             }
             #endif
         }
@@ -53,6 +61,28 @@ struct LearnHomeView: View {
             Text("PICKUP").font(Theme.display(22)).tracking(10).foregroundStyle(.white)
             Text("LEARN").font(Theme.light(12)).tracking(4).foregroundStyle(Theme.frost.opacity(0.6))
         }
+    }
+
+    private var playAlongCard: some View {
+        Button { showPlayAlong = true } label: {
+            HStack(spacing: 16) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(Theme.teal.opacity(0.9)).frame(width: 58, height: 58)
+                    Image(systemName: "music.note").font(.system(size: 24)).foregroundStyle(Color(hex: 0x06222A))
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Play Along").font(Theme.display(23)).foregroundStyle(.white)
+                    Text("Play through a song in time").font(Theme.body(14)).foregroundStyle(Theme.frost.opacity(0.75))
+                }
+                Spacer()
+                Image(systemName: "chevron.right").foregroundStyle(Theme.frost.opacity(0.6))
+            }
+            .padding(18)
+            .background(RoundedRectangle(cornerRadius: 22, style: .continuous).fill(Theme.teal.opacity(0.14)))
+            .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(Theme.teal.opacity(0.4), lineWidth: 1))
+        }
+        .buttonStyle(.plain)
     }
 
     private func courseCard(_ course: Course, unlocked: Bool) -> some View {

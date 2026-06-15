@@ -1,0 +1,115 @@
+//
+//  PlayAlongViewModel.swift
+//  Tempo-driven play-along: an audible click advances the bars while the mic
+//  scores which bars you played correctly.
+//
+
+import AVFoundation
+import Observation
+import SwiftUI
+
+@Observable
+final class PlayAlongViewModel {
+    let song: Song
+    var barIndex = 0
+    var beatInBar = 0
+    var isPlaying = false
+    var finished = false
+    var currentBarHit = false
+    var hits = 0
+    var permissionDenied = false
+
+    private let audio = AudioEngine()
+    private var chordEngine: ChordEngine?
+    private var beatTimer: Timer?
+    private let threshold = AudioSettings.shared.chordMatchThreshold
+    private var holdFrames = 0
+    private let holdRequired = 2
+
+    init(song: Song) {
+        self.song = song
+        audio.detectsPitch = false
+        audio.enableClickPlayback = true
+        audio.onSamples = { [weak self] samples, sr in self?.process(samples, sr) }
+    }
+
+    var bars: [Chord] { song.bars }
+    var current: Chord { bars[min(barIndex, bars.count - 1)] }
+    var nextChord: Chord? { barIndex + 1 < bars.count ? bars[barIndex + 1] : nil }
+    var progress: Double { bars.isEmpty ? 0 : Double(barIndex) / Double(bars.count) }
+    var total: Int { bars.count }
+
+    func toggle() { isPlaying ? stop() : start() }
+
+    func restart() {
+        finished = false
+        start()
+    }
+
+    private func start() {
+        AVAudioApplication.requestRecordPermission { [weak self] granted in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                guard granted else { self.permissionDenied = true; return }
+                do { try self.audio.start() } catch { return }
+                self.barIndex = 0; self.beatInBar = 0; self.hits = 0
+                self.currentBarHit = false; self.holdFrames = 0; self.finished = false
+                self.isPlaying = true
+                self.startBeatTimer()
+            }
+        }
+    }
+
+    private func stop() {
+        beatTimer?.invalidate(); beatTimer = nil
+        audio.stop()
+        isPlaying = false
+    }
+
+    private func startBeatTimer() {
+        let interval = 60.0 / Double(song.bpm)
+        beatTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
+            self?.tick()
+        }
+    }
+
+    private func tick() {
+        audio.playClick(accent: beatInBar == 0)
+        beatInBar += 1
+        if beatInBar >= song.beatsPerBar {
+            advanceBar()
+        }
+    }
+
+    private func advanceBar() {
+        if currentBarHit { hits += 1 }
+        beatInBar = 0
+        currentBarHit = false
+        holdFrames = 0
+        barIndex += 1
+        if barIndex >= bars.count { finish() }
+    }
+
+    private func finish() {
+        beatTimer?.invalidate(); beatTimer = nil
+        audio.stop()
+        isPlaying = false
+        finished = true
+        barIndex = max(0, bars.count - 1)
+    }
+
+    private func process(_ samples: [Float], _ sampleRate: Double) {
+        if chordEngine == nil { chordEngine = ChordEngine(sampleRate: sampleRate) }
+        let chroma = chordEngine?.chroma(samples)
+        DispatchQueue.main.async { [weak self] in
+            guard let self, self.isPlaying, !self.currentBarHit, let chroma else { return }
+            let score = ChordMatcher.score(chroma: chroma, pitchClasses: self.current.pitchClasses)
+            if score >= self.threshold {
+                self.holdFrames += 1
+                if self.holdFrames >= self.holdRequired { self.currentBarHit = true }
+            } else {
+                self.holdFrames = 0
+            }
+        }
+    }
+}

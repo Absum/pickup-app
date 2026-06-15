@@ -68,6 +68,7 @@ targets:
       - path: Pickup/Learn/ProgressStore.swift
       - path: Pickup/Chords/Chord.swift
       - path: Pickup/Chords/ChordProgression.swift
+      - path: Pickup/Songs/Song.swift
       - path: Pickup/Audio/ToneSynth.swift
     settings:
       base:
