@@ -7,6 +7,9 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var selection = 0
+    @AppStorage("didOnboarding") private var didOnboarding = false
+    @State private var showOnboarding = false
+    @Environment(\.scenePhase) private var scenePhase
 
     init() {
         #if DEBUG
@@ -20,14 +23,15 @@ struct ContentView: View {
         }
         #endif
 
-        // Restore the frosted-glass tab bar (system blur material) on BOTH the
-        // standard and scroll-edge appearances. Newer iOS defaults the scroll-edge
-        // appearance to fully transparent, which let scrolled content show through
-        // raw; the blur frosts whatever passes behind it instead.
-        let appearance = UITabBarAppearance()
-        appearance.configureWithDefaultBackground()
-        UITabBar.appearance().standardAppearance = appearance
-        UITabBar.appearance().scrollEdgeAppearance = appearance
+        // First-run onboarding. In DEBUG, only show it on explicit request, and
+        // suppress it whenever a PICKUP_ navigation flag is set, so QA flows work.
+        var show = !UserDefaults.standard.bool(forKey: "didOnboarding")
+        #if DEBUG
+        let env = ProcessInfo.processInfo.environment
+        if env["PICKUP_ONBOARDING"] != nil { show = true }
+        else if env.keys.contains(where: { $0.hasPrefix("PICKUP_") }) { show = false }
+        #endif
+        _showOnboarding = State(initialValue: show)
     }
 
     var body: some View {
@@ -49,6 +53,20 @@ struct ContentView: View {
                 .tabItem { Label("Settings", systemImage: "slider.horizontal.3") }
         }
         .tint(Theme.teal)
+        .fullScreenCover(isPresented: $showOnboarding) {
+            OnboardingView {
+                didOnboarding = true
+                showOnboarding = false
+                ReminderScheduler.shared.reschedule()
+            }
+        }
+        .task { ReminderScheduler.shared.reschedule() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                ProgressStore.shared.refreshStreak()
+                ReminderScheduler.shared.reschedule()
+            }
+        }
     }
 }
 
