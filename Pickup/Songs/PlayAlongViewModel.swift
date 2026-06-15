@@ -41,7 +41,14 @@ final class PlayAlongViewModel {
     var bars: [Chord] { song.bars }
     var current: Chord { bars[min(barIndex, bars.count - 1)] }
     var nextChord: Chord? { barIndex + 1 < bars.count ? bars[barIndex + 1] : nil }
-    var progress: Double { bars.isEmpty ? 0 : Double(barIndex) / Double(bars.count) }
+    /// Fills to full on the last bar so it matches the "BAR x / N" counter;
+    /// empty when idle.
+    var progress: Double {
+        guard !bars.isEmpty else { return 0 }
+        if finished { return 1 }
+        guard isPlaying || isPreviewing else { return 0 }
+        return Double(barIndex + 1) / Double(bars.count)
+    }
     var total: Int { bars.count }
 
     func toggle() { isPlaying ? stop() : start() }
@@ -75,6 +82,8 @@ final class PlayAlongViewModel {
         previewTimer?.invalidate(); previewTimer = nil
         preview.stop()
         isPreviewing = false
+        barIndex = 0
+        beatInBar = 0
     }
 
     func restart() {

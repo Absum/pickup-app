@@ -92,7 +92,10 @@ private struct PlayAlongRunner: View {
         ZStack {
             if model.finished { results } else { player }
         }
-        .onDisappear { if model.isPlaying { model.toggle() } }
+        .onDisappear {
+            if model.isPlaying { model.toggle() }
+            if model.isPreviewing { model.togglePreview() }
+        }
     }
 
     private var player: some View {
