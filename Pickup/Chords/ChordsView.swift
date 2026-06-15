@@ -8,6 +8,7 @@ import SwiftUI
 struct ChordsView: View {
     @State private var activeChord: Chord?
     @State private var filter: ChordQuality?
+    @State private var showChanges = false
 
     private let columns = [GridItem(.flexible(), spacing: 14),
                            GridItem(.flexible(), spacing: 14)]
@@ -19,6 +20,7 @@ struct ChordsView: View {
             ArcticBackground()
             VStack(spacing: 0) {
                 header.padding(.top, 12)
+                practiceChangesButton.padding(.top, 14).padding(.horizontal, 20)
                 filterBar.padding(.top, 14)
                 ScrollView {
                     LazyVGrid(columns: columns, spacing: 14) {
@@ -36,6 +38,9 @@ struct ChordsView: View {
         .fullScreenCover(item: $activeChord) { chord in
             ChordPracticeView(chord: chord) { activeChord = nil }
         }
+        .fullScreenCover(isPresented: $showChanges) {
+            ChordChangesView { showChanges = false }
+        }
         .onAppear {
             #if DEBUG
             if let id = ProcessInfo.processInfo.environment["PICKUP_CHORD"],
@@ -46,6 +51,9 @@ struct ChordsView: View {
                let quality = ChordQuality(rawValue: raw) {
                 filter = quality
             }
+            if ProcessInfo.processInfo.environment["PICKUP_CHANGES"] != nil {
+                showChanges = true
+            }
             #endif
         }
     }
@@ -55,6 +63,22 @@ struct ChordsView: View {
             Text("PICKUP").font(Theme.display(22)).tracking(10).foregroundStyle(.white)
             Text("CHORDS").font(Theme.light(12)).tracking(4).foregroundStyle(Theme.frost.opacity(0.6))
         }
+    }
+
+    private var practiceChangesButton: some View {
+        Button { showChanges = true } label: {
+            HStack(spacing: 10) {
+                Image(systemName: "arrow.left.arrow.right").font(.system(size: 15, weight: .semibold))
+                Text("PRACTICE CHANGES").font(Theme.display(16)).tracking(2)
+                Spacer()
+                Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).opacity(0.6)
+            }
+            .foregroundStyle(Color(hex: 0x06222A))
+            .padding(.horizontal, 18).frame(height: 50)
+            .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Theme.teal))
+            .shadow(color: Theme.teal.opacity(0.4), radius: 12, y: 4)
+        }
+        .buttonStyle(.plain)
     }
 
     private var filterBar: some View {
