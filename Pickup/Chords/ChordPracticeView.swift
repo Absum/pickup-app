@@ -30,7 +30,7 @@ struct ChordPracticeView: View {
                     .font(Theme.light(13)).tracking(5).foregroundStyle(Theme.frost.opacity(0.7))
 
                 FretboardDiagram(positions: chord.positions, mutedStrings: chord.mutedStrings, barre: chord.barre)
-                    .frame(width: 250, height: 156)
+                    .frame(width: 250, height: 170)
                     .padding(.top, 18)
 
                 hearItButton.padding(.top, 18)
