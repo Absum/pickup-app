@@ -19,9 +19,11 @@ struct PickupApp: App {
     }
 
     private func configureTabBarAppearance() {
+        // One source of truth for the tab bar: the system translucent blur (the
+        // frosted-glass look the Chords screen has). No opaque background tint, and
+        // the same appearance for standard + scroll-edge so every tab matches.
         let appearance = UITabBarAppearance()
         appearance.configureWithDefaultBackground()
-        appearance.backgroundColor = UIColor(Theme.bgTop.opacity(0.92))
 
         let normal = UIColor(Theme.frost.opacity(0.55))
         let selected = UIColor(Theme.teal)
