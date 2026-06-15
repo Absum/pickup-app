@@ -15,7 +15,9 @@ struct TunerView: View {
         ZStack {
             ArcticBackground(glow: inTune)
 
-            VStack(spacing: 0) {
+            GeometryReader { geo in
+              ScrollView {
+                VStack(spacing: 0) {
                 header
                     .padding(.top, 12)
 
@@ -41,6 +43,10 @@ struct TunerView: View {
                 listenButton
                     .padding(.horizontal, 30)
                     .padding(.bottom, 18)
+                }
+                .frame(minHeight: geo.size.height)
+              }
+              .scrollBounceBehavior(.basedOnSize)
             }
         }
         .preferredColorScheme(.dark)

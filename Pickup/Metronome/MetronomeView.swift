@@ -16,7 +16,9 @@ struct MetronomeView: View {
         ZStack {
             ArcticBackground(glow: model.isRunning && model.currentBeat == 0)
 
-            VStack(spacing: 0) {
+            GeometryReader { geo in
+              ScrollView {
+                VStack(spacing: 0) {
                 header.padding(.top, 12)
                 Spacer()
                 bpmDial
@@ -28,6 +30,10 @@ struct MetronomeView: View {
                 signaturePicker
                 Spacer()
                 bottomControls.padding(.horizontal, 30).padding(.bottom, 18)
+                }
+                .frame(minHeight: geo.size.height)
+              }
+              .scrollBounceBehavior(.basedOnSize)
             }
         }
         .preferredColorScheme(.dark)
