@@ -12,6 +12,9 @@ enum ToneSynth {
         guard frequency > 0, length > 0, sampleRate > 0 else { return [] }
         let n = max(2, Int((sampleRate / frequency).rounded()))
         var ring = (0..<n).map { _ in Float.random(in: -1...1) }
+        // Low-pass the excitation burst so the attack isn't a harsh broadband click.
+        let raw = ring
+        for i in 0..<n { ring[i] = 0.5 * (raw[i] + raw[(i + 1) % n]) }
         var out = [Float](repeating: 0, count: length)
         var index = 0
         for i in 0..<length {
@@ -39,11 +42,13 @@ enum ToneSynth {
 
         var peak: Float = 0
         for value in mix { peak = max(peak, abs(value)) }
-        let scale = peak > 0 ? 0.85 / peak : 1
-        let fade = min(total / 20, 1500)
+        let scale = peak > 0 ? 0.7 / peak : 1          // headroom — don't drive speakers to full scale
+        let fadeOut = min(total / 20, 1500)
+        let attack = min(total, Int(sampleRate * 0.006))   // ~6 ms fade-in kills the onset click
         for i in 0..<total {
             var sample = mix[i] * scale
-            if fade > 0, i > total - fade { sample *= Float(total - i) / Float(fade) }
+            if attack > 0, i < attack { sample *= Float(i) / Float(attack) }
+            if fadeOut > 0, i > total - fadeOut { sample *= Float(total - i) / Float(fadeOut) }
             mix[i] = sample
         }
         return mix
