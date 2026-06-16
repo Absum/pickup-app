@@ -110,6 +110,7 @@ private struct PlayAlongRunner: View {
             nextHint
             Spacer()
             VStack(spacing: 10) {
+                if !model.isPlaying { practiceControls }
                 if !model.isPlaying { listenButton }
                 controlButton
             }
@@ -176,6 +177,31 @@ private struct PlayAlongRunner: View {
     private var nextHint: some View {
         Text(model.nextChord.map { "NEXT  ·  \($0.name)" } ?? "LAST BAR")
             .font(Theme.title(15)).tracking(3).foregroundStyle(Theme.frost.opacity(0.7))
+    }
+
+    private var practiceControls: some View {
+        HStack(spacing: 8) {
+            ForEach([0.5, 0.75, 1.0], id: \.self) { s in
+                Button { model.speed = s } label: {
+                    Text(String(format: "%g×", s))
+                        .font(Theme.title(13)).tracking(1)
+                        .foregroundStyle(model.speed == s ? Color(hex: 0x06222A) : Theme.frost.opacity(0.8))
+                        .frame(maxWidth: .infinity).frame(height: 36)
+                        .background(Capsule().fill(model.speed == s ? AnyShapeStyle(Theme.teal) : AnyShapeStyle(.white.opacity(0.07))))
+                        .overlay(Capsule().stroke(model.speed == s ? .clear : .white.opacity(0.14), lineWidth: 1))
+                }
+                .buttonStyle(.plain)
+            }
+            Button { model.loop.toggle() } label: {
+                Image(systemName: model.loop ? "repeat.circle.fill" : "repeat")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(model.loop ? Theme.teal : Theme.frost.opacity(0.8))
+                    .frame(width: 46, height: 36)
+                    .background(Capsule().fill(model.loop ? Theme.teal.opacity(0.15) : .white.opacity(0.07)))
+                    .overlay(Capsule().stroke(model.loop ? Theme.teal.opacity(0.5) : .white.opacity(0.14), lineWidth: 1))
+            }
+            .buttonStyle(.plain)
+        }
     }
 
     private var listenButton: some View {

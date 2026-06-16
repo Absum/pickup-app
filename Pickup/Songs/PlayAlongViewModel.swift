@@ -19,6 +19,10 @@ final class PlayAlongViewModel {
     var hits = 0
     var permissionDenied = false
     var isPreviewing = false
+    /// Practice speed (slow-down): 1.0 = song tempo, 0.5 = half speed.
+    var speed: Double = 1.0
+    /// Loop the progression for drilling instead of finishing.
+    var loop = false
 
     private let audio = AudioEngine()
     private let preview = TonePlayer()
@@ -71,7 +75,7 @@ final class PlayAlongViewModel {
         guard isPreviewing, previewBar < bars.count else { stopPreview(); return }
         barIndex = previewBar
         preview.playChord(bars[previewBar].frequencies)
-        let barDuration = Double(song.beatsPerBar) * 60.0 / Double(song.bpm)
+        let barDuration = Double(song.beatsPerBar) * 60.0 / (Double(song.bpm) * speed)
         previewTimer = Timer.scheduledTimer(withTimeInterval: barDuration, repeats: false) { [weak self] _ in
             guard let self else { return }
             self.previewBar += 1
@@ -114,7 +118,7 @@ final class PlayAlongViewModel {
     }
 
     private func startBeatTimer() {
-        let interval = 60.0 / Double(song.bpm)
+        let interval = 60.0 / (Double(song.bpm) * speed)
         beatTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
             self?.tick()
         }
@@ -134,7 +138,10 @@ final class PlayAlongViewModel {
         currentBarHit = false
         holdFrames = 0
         barIndex += 1
-        if barIndex >= bars.count { finish() }
+        if barIndex >= bars.count {
+            if loop { barIndex = 0; hits = 0; currentBarHit = false }
+            else { finish() }
+        }
     }
 
     private func finish() {

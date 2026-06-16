@@ -26,6 +26,8 @@ final class TabHighwayViewModel {
     var isPreviewing = false
     /// Practice/wait mode: hold each note at the strike line until it's played.
     var waitMode = false
+    /// Loop the track for drilling — replays instead of showing results.
+    var loop = false
 
     /// Signed timing error per hit note (seconds; <0 = early, >0 = late), after
     /// compensating for analysis latency. Drives the timing accuracy score.
@@ -207,6 +209,13 @@ final class TabHighwayViewModel {
     }
 
     private func finish() {
+        if loop {
+            // Replay for drilling — keep the clock + audio running, just reset.
+            currentTime = -2.0
+            hitIDs = []; flashes = [:]; timingErrors = [:]; recentOnsets = []
+            lastClickBeat = .min
+            return
+        }
         clock?.invalidate(); clock = nil
         audio.stop()
         isPlaying = false

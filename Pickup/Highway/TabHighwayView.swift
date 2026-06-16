@@ -183,7 +183,7 @@ private struct HighwayRunner: View {
         VStack(spacing: 0) {
             topBar.padding(.top, 12)
             highway
-            waitToggle.padding(.horizontal, 30).padding(.bottom, 8)
+            practiceToggles.padding(.horizontal, 30).padding(.bottom, 8)
             speedSelector.padding(.horizontal, 30).padding(.bottom, 10)
             if !model.isPlaying { listenButton.padding(.horizontal, 30).padding(.bottom, 10) }
             controlButton.padding(.horizontal, 30).padding(.bottom, 18)
@@ -205,23 +205,32 @@ private struct HighwayRunner: View {
         .buttonStyle(.plain)
     }
 
-    private var waitToggle: some View {
-        Button { model.waitMode.toggle() } label: {
-            HStack(spacing: 8) {
-                Image(systemName: model.waitMode ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 16, weight: .semibold))
-                Text("WAIT FOR EACH NOTE").font(Theme.title(13)).tracking(1)
-                Spacer()
+    private var practiceToggles: some View {
+        HStack(spacing: 10) {
+            toggleChip(label: "WAIT", icon: "pause.circle", on: model.waitMode,
+                       disabled: model.isPlaying || model.isPreviewing) { model.waitMode.toggle() }
+            toggleChip(label: "LOOP", icon: "repeat", on: model.loop,
+                       disabled: model.isPreviewing) { model.loop.toggle() }
+        }
+    }
+
+    private func toggleChip(label: String, icon: String, on: Bool, disabled: Bool,
+                            action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 7) {
+                Image(systemName: on ? "checkmark.circle.fill" : icon)
+                    .font(.system(size: 15, weight: .semibold))
+                Text(label).font(Theme.title(13)).tracking(1)
             }
-            .foregroundStyle(model.waitMode ? Theme.teal : Theme.frost.opacity(0.7))
-            .padding(.horizontal, 16).frame(height: 40)
+            .frame(maxWidth: .infinity).frame(height: 40)
+            .foregroundStyle(on ? Theme.teal : Theme.frost.opacity(0.7))
             .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(.white.opacity(0.06)))
             .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(model.waitMode ? Theme.teal.opacity(0.5) : .white.opacity(0.12), lineWidth: 1))
+                .stroke(on ? Theme.teal.opacity(0.5) : .white.opacity(0.12), lineWidth: 1))
         }
         .buttonStyle(.plain)
-        .disabled(model.isPlaying || model.isPreviewing)
-        .opacity(model.isPlaying || model.isPreviewing ? 0.4 : 1)
+        .disabled(disabled)
+        .opacity(disabled ? 0.4 : 1)
     }
 
     private var speedSelector: some View {
