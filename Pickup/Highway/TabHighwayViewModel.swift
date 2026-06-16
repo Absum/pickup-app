@@ -51,7 +51,7 @@ final class TabHighwayViewModel {
     private var lastClickBeat = Int.min
     private var clock: Timer?
     private let hitWindow = 0.30      // seconds around a note's strike time
-    private let centsTolerance = 60.0
+    // Note tolerance + onset window read live from AudioSettings (dev tuning).
 
     init(track: HighwayTrack) {
         self.track = track
@@ -238,7 +238,7 @@ final class TabHighwayViewModel {
             let dt = abs(seconds(of: n) - currentTime)
             guard dt < hitWindow else { continue }
             let cents = abs(1200.0 * log2(frequency / n.frequency))
-            if cents < centsTolerance {
+            if cents < AudioSettings.shared.noteToleranceCents {
                 hitIDs.insert(n.id)
                 flashes[n.string] = currentTime
                 // Grade timing (not meaningful while waitMode holds the note).
@@ -248,7 +248,7 @@ final class TabHighwayViewModel {
                     // fall back to the pitch-match time if none is close.
                     let offset: Double
                     if let o = recentOnsets.min(by: { abs($0 - beat) < abs($1 - beat) }),
-                       abs(o - beat) <= 0.2 {
+                       abs(o - beat) <= AudioSettings.shared.timingWindow {
                         offset = o - beat
                     } else {
                         offset = (currentTime - beat) - timingLatency

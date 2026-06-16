@@ -21,8 +21,7 @@ final class ChordPracticeViewModel {
     private let player = TonePlayer()
     private var chordEngine: ChordEngine?
     private var holdFrames = 0
-    private let holdRequired = 3
-    private let threshold = AudioSettings.shared.chordMatchThreshold
+    // Threshold + hold read live from AudioSettings so the dev tuning panel applies.
 
     init(chord: Chord) {
         self.chord = chord
@@ -86,9 +85,9 @@ final class ChordPracticeViewModel {
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             self.score = value
-            if value >= self.threshold {
+            if value >= AudioSettings.shared.chordMatchThreshold {
                 self.holdFrames += 1
-                if self.holdFrames >= self.holdRequired {
+                if self.holdFrames >= AudioSettings.shared.chordHoldFrames {
                     if !self.matched { ProgressStore.shared.awardXP(10) }
                     self.matched = true
                 }

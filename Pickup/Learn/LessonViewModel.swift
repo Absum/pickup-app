@@ -37,8 +37,8 @@ final class LessonViewModel {
     private let countInBeats = 4
     private var holdFrames = 0
     private let holdRequired = 4        // ~0.3–0.4s of the right note before it counts
-    private let chordHoldRequired = 3   // strums register a touch faster
-    private let chordThreshold = AudioSettings.shared.chordMatchThreshold
+    // Chord threshold/hold, note tolerance and timing window read live from
+    // AudioSettings so the dev tuning panel applies without restarting.
 
     init(lesson: Lesson, store: ProgressStore = .shared) {
         self.lesson = lesson
@@ -127,7 +127,7 @@ final class LessonViewModel {
         let beatInterval = 60.0 / Double(pattern.bpm)
         let nearest = Int((strumTime / beatInterval).rounded())
         guard nearest >= 0, nearest < pattern.beats, !hitBeats.contains(nearest) else { return }
-        if abs(strumTime - Double(nearest) * beatInterval) <= 0.25 {
+        if abs(strumTime - Double(nearest) * beatInterval) <= AudioSettings.shared.timingWindow {
             hitBeats.insert(nearest)
             strumHits += 1
         }
@@ -174,11 +174,12 @@ final class LessonViewModel {
         DispatchQueue.main.async { [weak self] in
             guard let self, !self.isComplete, self.currentStep.chord != nil else { return }
             self.detectedLabel = "\(Int(value * 100))% match"
-            if value >= self.chordThreshold {
+            let threshold = AudioSettings.shared.chordMatchThreshold
+            if value >= threshold {
                 self.feedback = .correct
                 self.holdFrames += 1
-                if self.holdFrames >= self.chordHoldRequired { self.completeStep() }
-            } else if value >= self.chordThreshold - 0.12 {
+                if self.holdFrames >= AudioSettings.shared.chordHoldFrames { self.completeStep() }
+            } else if value >= threshold - 0.12 {
                 self.feedback = .close; self.holdFrames = 0
             } else {
                 self.feedback = .waiting; self.holdFrames = 0
@@ -193,7 +194,8 @@ final class LessonViewModel {
         }
         detectedLabel = reading.displayName
 
-        switch LessonLibrary.evaluate(frequency: result.frequency, target: currentStep.frequency) {
+        switch LessonLibrary.evaluate(frequency: result.frequency, target: currentStep.frequency,
+                                      correctCents: AudioSettings.shared.noteToleranceCents) {
         case .correct:
             feedback = .correct
             holdFrames += 1

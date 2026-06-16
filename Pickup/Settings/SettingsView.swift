@@ -47,6 +47,7 @@ struct SettingsView: View {
                         resetButton
                         footnote
                         #if DEBUG
+                        tuningCard
                         devCard
                         #endif
                     }
@@ -67,6 +68,28 @@ struct SettingsView: View {
     }
 
     #if DEBUG
+    private var chordHoldBinding: Binding<Double> {
+        Binding(get: { Double(settings.chordHoldFrames) },
+                set: { settings.chordHoldFrames = Int($0.rounded()) })
+    }
+
+    private var tuningCard: some View {
+        VStack(spacing: 16) {
+            Text("DETECTION TUNING · DEV")
+                .font(Theme.display(15)).tracking(2).foregroundStyle(Theme.teal)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            sliderCard(title: "CHORD HOLD",
+                       subtitle: "Frames a chord must hold to register — now \(settings.chordHoldFrames).",
+                       value: chordHoldBinding, range: 1...8, left: "Fast", right: "Strict")
+            sliderCard(title: "NOTE TOLERANCE",
+                       subtitle: "How close a note must be — now \(Int(settings.noteToleranceCents))¢.",
+                       value: $settings.noteToleranceCents, range: 20...100, left: "Tight", right: "Loose")
+            sliderCard(title: "TIMING WINDOW",
+                       subtitle: "Strum / onset window — now \(Int(settings.timingWindowMs)) ms.",
+                       value: $settings.timingWindowMs, range: 100...350, left: "Tight", right: "Loose")
+        }
+    }
+
     private var devCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("DEVELOPER").font(Theme.display(18)).tracking(2).foregroundStyle(.white)
