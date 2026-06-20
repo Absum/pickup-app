@@ -189,7 +189,7 @@ struct LessonView: View {
                 .shadow(color: inTune ? Theme.teal.opacity(0.7) : .clear, radius: 18)
             FretboardDiagram(positions: chord.positions, mutedStrings: chord.mutedStrings,
                              barre: chord.barre, showFingers: true)
-                .frame(width: 224, height: 152)
+                .frame(width: 286, height: 232)   // match the chord-practice screen
             Text(model.currentStep.hint)
                 .font(Theme.body(16)).foregroundStyle(Theme.frost.opacity(0.8))
         }
