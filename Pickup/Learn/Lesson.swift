@@ -174,6 +174,12 @@ enum LessonLibrary {
         prerequisites: ["chord-c", "chord-g", "chord-d"],   // needs the actual chords
         steps: strumSteps([("Em", 80, 4), ("C", 80, 4), ("G", 80, 4), ("D", 80, 4)]))
 
+    // Spiral revisit: the open chords come back faster (Bruner — revisit deeper).
+    static let spiralGCD = Lesson(
+        id: "spiral-gcd", title: "G–C–D at Speed", subtitle: "Your open chords, faster",
+        tier: 2, prerequisite: "first-song", prerequisites: ["chord-g", "chord-c", "chord-d"],
+        steps: strumSteps([("G", 100, 4), ("C", 100, 4), ("D", 100, 4), ("G", 100, 4)]))
+
     // MARK: - Tier 3 — barre chords & rhythm
 
     static let cheaterF = Lesson(
@@ -200,6 +206,12 @@ enum LessonLibrary {
         id: "faster-strum", title: "Faster Strumming", subtitle: "Pick up the pace, keep it even",
         tier: 3, prerequisite: "palm-mute", steps: strumSteps([("A", 100, 8)]))
 
+    // Spiral revisit: open chords return alongside the new F barre.
+    static let spiralBarreMix = Lesson(
+        id: "spiral-barre-mix", title: "Open & Barre", subtitle: "Mix the F barre with open chords",
+        tier: 3, prerequisite: "change-fc", prerequisites: ["chord-f", "chord-c", "chord-g"],
+        steps: strumSteps([("F", 90, 4), ("C", 90, 4), ("G", 90, 4), ("C", 90, 4)]))
+
     // MARK: - Tier 4 — lead basics (single-note scales & riffs)
 
     static let minorPentatonic = Lesson(
@@ -221,8 +233,8 @@ enum LessonLibrary {
     static let all: [Lesson] = [openStrings, stringSwitching, lowToHigh, lowENotes, aStringNotes,
                                 chordEm, chordAm, songEmAm, chordE, chordA, chordD, chordG, chordC,
                                 changeEA, changeAD, changeGC,
-                                strumDown, strumKeep, firstSong,
-                                cheaterF, chordF, chordBm, changeFC, palmMute, fasterStrum,
+                                strumDown, strumKeep, firstSong, spiralGCD,
+                                cheaterF, chordF, chordBm, changeFC, palmMute, fasterStrum, spiralBarreMix,
                                 minorPentatonic, pentatonicRun, firstLick]
 
     // MARK: - Step builders
@@ -346,7 +358,8 @@ enum CourseLibrary {
     static let strumming = Course(
         id: "strumming", title: "Strumming & Songs",
         subtitle: "Tier 2 · Play in time", tier: 2,
-        lessons: [LessonLibrary.strumDown, LessonLibrary.strumKeep, LessonLibrary.firstSong])
+        lessons: [LessonLibrary.strumDown, LessonLibrary.strumKeep, LessonLibrary.firstSong,
+                  LessonLibrary.spiralGCD])
 
     // MARK: - Tiers 3–5 — on the map, content not authored yet
 
@@ -354,7 +367,8 @@ enum CourseLibrary {
         id: "barre-rhythm", title: "Barre & Rhythm",
         subtitle: "Tier 3 · Barre chords, palm muting", tier: 3,
         lessons: [LessonLibrary.cheaterF, LessonLibrary.chordF, LessonLibrary.chordBm,
-                  LessonLibrary.changeFC, LessonLibrary.palmMute, LessonLibrary.fasterStrum])
+                  LessonLibrary.changeFC, LessonLibrary.palmMute, LessonLibrary.fasterStrum,
+                  LessonLibrary.spiralBarreMix])
 
     static let leadBasics = Course(
         id: "lead-basics", title: "Lead Basics",

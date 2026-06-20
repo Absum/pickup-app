@@ -13,12 +13,12 @@ final class CourseTests: XCTestCase {
         XCTAssertEqual(CourseLibrary.firstNotes.lessons.count, 2)
         XCTAssertEqual(CourseLibrary.firstChords.lessons.count, 8)   // Em Am, song, E A D G C
         XCTAssertEqual(CourseLibrary.chordChanges.lessons.count, 3)
-        XCTAssertEqual(CourseLibrary.strumming.lessons.count, 3)
+        XCTAssertEqual(CourseLibrary.strumming.lessons.count, 4)   // + spiral G–C–D
     }
 
     func testTier3BarreContent() {
         XCTAssertFalse(CourseLibrary.barreRhythm.comingSoon)
-        XCTAssertEqual(CourseLibrary.barreRhythm.lessons.count, 6)        // easy-F added first
+        XCTAssertEqual(CourseLibrary.barreRhythm.lessons.count, 7)        // easy-F + spiral mix
         XCTAssertEqual(CourseLibrary.barreRhythm.lessons.first?.id, "cheater-f")
         XCTAssertNotNil(LessonLibrary.chordF.steps.first?.chord?.barre)   // full F is a barre shape
         XCTAssertEqual(LessonLibrary.chordF.prerequisite, "cheater-f")
@@ -63,6 +63,13 @@ final class CourseTests: XCTestCase {
         // A 2-chord song lands after the first two chords and gates the rest.
         XCTAssertTrue(CourseLibrary.firstChords.lessons.contains { $0.id == "song-em-am" })
         XCTAssertEqual(LessonLibrary.chordE.prerequisite, "song-em-am")
+    }
+
+    func testSpiralRevisitsReuseEarlierChords() {
+        // Spiral nodes pull earlier chords back at a harder tempo / mixed with barre.
+        XCTAssertTrue(CourseLibrary.strumming.lessons.contains { $0.id == "spiral-gcd" })
+        XCTAssertEqual(Set(LessonLibrary.spiralGCD.prerequisites), ["chord-g", "chord-c", "chord-d"])
+        XCTAssertTrue(LessonLibrary.spiralBarreMix.prerequisites.contains("chord-f"))   // open + barre
     }
 
     func testMultiplePrerequisites() {
