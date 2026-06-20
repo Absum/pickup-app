@@ -90,14 +90,16 @@ enum LessonLibrary {
         subtitle: "Run up and back down", tier: 0, prerequisite: "string-switching",
         steps: openStringSteps([0, 1, 2, 3, 4, 5, 4, 3, 2, 1, 0]))
 
+    // Single-note fretting now lives in the lead track (Tier 4) as scale prep —
+    // chords/songs come first; single notes matter once you start playing lead.
     static let lowENotes = Lesson(
         id: "low-e-notes", title: "Low E Notes",
-        subtitle: "Open, 1st & 3rd fret", tier: 1, prerequisite: "low-to-high",
+        subtitle: "Open, 1st & 3rd fret", tier: 4, prerequisite: "faster-strum",
         steps: frettedSteps(string: 0, frets: [0, 1, 3]))
 
     static let aStringNotes = Lesson(
         id: "a-string-notes", title: "A String Notes",
-        subtitle: "Open, 2nd & 3rd fret", tier: 1, prerequisite: "low-e-notes",
+        subtitle: "Open, 2nd & 3rd fret", tier: 4, prerequisite: "low-e-notes",
         steps: frettedSteps(string: 1, frets: [0, 2, 3]))
 
     // MARK: - Tier 1 — open chords, easiest first (scored by chord detection)
@@ -169,9 +171,13 @@ enum LessonLibrary {
 
     // MARK: - Tier 3 — barre chords & rhythm
 
+    static let cheaterF = Lesson(
+        id: "cheater-f", title: "The Easy F", subtitle: "A 4-string F — no full barre yet",
+        tier: 3, prerequisite: "first-song", steps: chordSteps([easyFChord, easyFChord, easyFChord]))
+
     static let chordF = Lesson(
-        id: "chord-f", title: "The F Chord", subtitle: "Your first barre — index across all six",
-        tier: 3, prerequisite: "first-song", steps: chordSteps(["F", "F", "F"]))
+        id: "chord-f", title: "The Full F Barre", subtitle: "Index across all six strings",
+        tier: 3, prerequisite: "cheater-f", steps: chordSteps(["F", "F", "F"]))
 
     static let chordBm = Lesson(
         id: "chord-bm", title: "The B Minor Chord", subtitle: "An A-shape barre",
@@ -193,7 +199,7 @@ enum LessonLibrary {
 
     static let minorPentatonic = Lesson(
         id: "pentatonic-am", title: "A Minor Pentatonic", subtitle: "Your first scale — one octave",
-        tier: 4, prerequisite: "faster-strum",
+        tier: 4, prerequisite: "a-string-notes",
         steps: noteSteps([(1, 0), (1, 3), (2, 0), (2, 2), (3, 0), (3, 2)]))
 
     static let pentatonicRun = Lesson(
@@ -211,7 +217,7 @@ enum LessonLibrary {
                                 chordEm, chordAm, songEmAm, chordE, chordA, chordD, chordG, chordC,
                                 changeEA, changeAD, changeGC,
                                 strumDown, strumKeep, firstSong,
-                                chordF, chordBm, changeFC, palmMute, fasterStrum,
+                                cheaterF, chordF, chordBm, changeFC, palmMute, fasterStrum,
                                 minorPentatonic, pentatonicRun, firstLick]
 
     // MARK: - Step builders
@@ -220,11 +226,28 @@ enum LessonLibrary {
 
     /// One "strum this chord" step per id (skips any unknown id).
     private static func chordSteps(_ ids: [String]) -> [LessonStep] {
-        ids.compactMap(chord).enumerated().map { index, chord in
+        chordSteps(ids.compactMap(chord))
+    }
+
+    /// Chord steps from explicit voicings (for shapes not in the bank, e.g. the easy F).
+    private static func chordSteps(_ chords: [Chord]) -> [LessonStep] {
+        chords.enumerated().map { index, chord in
             LessonStep(id: index, note: chord.name, octaveLabel: "", frequency: 0,
                        hint: "Strum the \(chord.name) chord", position: nil, chord: chord)
         }
     }
+
+    /// The 4-string "easy F" — no full barre. Mute low E & A; index barres the
+    /// top two strings at fret 1, middle on G(2), ring on D(3). F major (F A C).
+    static let easyFChord = Chord(
+        id: "F-easy", name: "F", root: "F", quality: .major,
+        positions: [FretPosition(string: 2, fret: 3, finger: 3),
+                    FretPosition(string: 3, fret: 2, finger: 2),
+                    FretPosition(string: 4, fret: 1, finger: 1),
+                    FretPosition(string: 5, fret: 1, finger: 1)],
+        mutedStrings: [0, 1],
+        pitchClasses: [5, 9, 0],
+        barre: Barre(fret: 1, fromString: 4, toString: 5))
 
     /// Single-note steps across strings: (string, fret) → pitch target.
     private static func noteSteps(_ positions: [(Int, Int)]) -> [LessonStep] {
@@ -299,8 +322,8 @@ enum CourseLibrary {
         lessons: [LessonLibrary.openStrings, LessonLibrary.stringSwitching, LessonLibrary.lowToHigh])
 
     static let firstNotes = Course(
-        id: "first-notes", title: "First Notes",
-        subtitle: "Tier 1 · Fret your first notes", tier: 1,
+        id: "first-notes", title: "Single Notes",
+        subtitle: "Tier 4 · Lead prep — fret single notes", tier: 4,
         lessons: [LessonLibrary.lowENotes, LessonLibrary.aStringNotes])
 
     static let firstChords = Course(
@@ -325,8 +348,8 @@ enum CourseLibrary {
     static let barreRhythm = Course(
         id: "barre-rhythm", title: "Barre & Rhythm",
         subtitle: "Tier 3 · Barre chords, palm muting", tier: 3,
-        lessons: [LessonLibrary.chordF, LessonLibrary.chordBm, LessonLibrary.changeFC,
-                  LessonLibrary.palmMute, LessonLibrary.fasterStrum])
+        lessons: [LessonLibrary.cheaterF, LessonLibrary.chordF, LessonLibrary.chordBm,
+                  LessonLibrary.changeFC, LessonLibrary.palmMute, LessonLibrary.fasterStrum])
 
     static let leadBasics = Course(
         id: "lead-basics", title: "Lead Basics",
@@ -342,7 +365,7 @@ enum CourseLibrary {
     // Chords-first: First Chords sits right after First Contact; First Notes
     // (single-note fretting) is now a parallel side-track ahead of lead work.
     static let all: [Course] = [firstContact, firstChords, chordChanges, strumming,
-                                firstNotes, barreRhythm, leadBasics, intermediate]
+                                barreRhythm, firstNotes, leadBasics, intermediate]
 
     static func isUnlocked(_ course: Course, completed: Set<String>) -> Bool {
         guard !course.comingSoon else { return false }

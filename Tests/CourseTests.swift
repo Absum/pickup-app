@@ -18,8 +18,10 @@ final class CourseTests: XCTestCase {
 
     func testTier3BarreContent() {
         XCTAssertFalse(CourseLibrary.barreRhythm.comingSoon)
-        XCTAssertEqual(CourseLibrary.barreRhythm.lessons.count, 5)
-        XCTAssertNotNil(LessonLibrary.chordF.steps.first?.chord?.barre)   // F is a barre shape
+        XCTAssertEqual(CourseLibrary.barreRhythm.lessons.count, 6)        // easy-F added first
+        XCTAssertEqual(CourseLibrary.barreRhythm.lessons.first?.id, "cheater-f")
+        XCTAssertNotNil(LessonLibrary.chordF.steps.first?.chord?.barre)   // full F is a barre shape
+        XCTAssertEqual(LessonLibrary.chordF.prerequisite, "cheater-f")
     }
 
     func testTier4ScaleContent() {
@@ -73,10 +75,13 @@ final class CourseTests: XCTestCase {
         XCTAssertTrue(CourseLibrary.isUnlocked(CourseLibrary.firstContact, completed: []))
     }
 
-    func testSecondCourseLockedUntilFirstContactFinished() {
-        XCTAssertFalse(CourseLibrary.isUnlocked(CourseLibrary.firstNotes, completed: []))
-        // first-notes' first lesson requires "low-to-high" (last of first-contact).
-        XCTAssertTrue(CourseLibrary.isUnlocked(CourseLibrary.firstNotes, completed: ["low-to-high"]))
+    func testSingleNotesAreLeadPrep() {
+        // Single-note fretting is now Tier 4 lead-prep, gated by the end of Tier 3.
+        XCTAssertEqual(CourseLibrary.firstNotes.tier, 4)
+        XCTAssertFalse(CourseLibrary.isUnlocked(CourseLibrary.firstNotes, completed: ["low-to-high"]))
+        XCTAssertTrue(CourseLibrary.isUnlocked(CourseLibrary.firstNotes, completed: ["faster-strum"]))
+        // …and they precede the first scale.
+        XCTAssertEqual(LessonLibrary.minorPentatonic.prerequisite, "a-string-notes")
     }
 
     func testFrettedNoteFrequencyAndName() {
