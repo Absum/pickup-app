@@ -100,26 +100,36 @@ enum LessonLibrary {
         subtitle: "Open, 2nd & 3rd fret", tier: 1, prerequisite: "low-e-notes",
         steps: frettedSteps(string: 1, frets: [0, 2, 3]))
 
-    // MARK: - Tier 1 — open chords (scored by chord detection)
+    // MARK: - Tier 1 — open chords, easiest first (scored by chord detection)
+    // Em → Am → E → A → D → G → C. Chords unlock right after open strings; the
+    // single-note fretting lessons are a parallel branch (relocated to lead next).
 
-    static let chordA = Lesson(
-        id: "chord-a", title: "The A Chord", subtitle: "Three fingers, top five strings",
-        tier: 1, prerequisite: "a-string-notes", steps: chordSteps(["A", "A", "A"]))
+    static let chordEm = Lesson(
+        id: "chord-em", title: "The E Minor Chord", subtitle: "Two fingers — your easiest chord",
+        tier: 1, prerequisite: "low-to-high", steps: chordSteps(["Em", "Em", "Em"]))
+
+    static let chordAm = Lesson(
+        id: "chord-am", title: "The A Minor Chord", subtitle: "Same shape, moved over a string",
+        tier: 1, prerequisite: "chord-em", steps: chordSteps(["Am", "Am", "Am"]))
 
     static let chordE = Lesson(
         id: "chord-e", title: "The E Chord", subtitle: "A full, ringing chord",
-        tier: 1, prerequisite: "chord-a", steps: chordSteps(["E", "E", "E"]))
+        tier: 1, prerequisite: "chord-am", steps: chordSteps(["E", "E", "E"]))
+
+    static let chordA = Lesson(
+        id: "chord-a", title: "The A Chord", subtitle: "Three fingers, top five strings",
+        tier: 1, prerequisite: "chord-e", steps: chordSteps(["A", "A", "A"]))
 
     static let chordD = Lesson(
         id: "chord-d", title: "The D Chord", subtitle: "A bright triangle shape",
-        tier: 1, prerequisite: "chord-e", steps: chordSteps(["D", "D", "D"]))
+        tier: 1, prerequisite: "chord-a", steps: chordSteps(["D", "D", "D"]))
 
     static let chordG = Lesson(
         id: "chord-g", title: "The G Chord", subtitle: "Reach across all six strings",
         tier: 1, prerequisite: "chord-d", steps: chordSteps(["G", "G", "G"]))
 
     static let chordC = Lesson(
-        id: "chord-c", title: "The C Chord", subtitle: "A classic open chord",
+        id: "chord-c", title: "The C Chord", subtitle: "A classic open chord, trickiest of the set",
         tier: 1, prerequisite: "chord-g", steps: chordSteps(["C", "C", "C"]))
 
     // MARK: - Tier 2 — chord transitions (alternating chord steps)
@@ -192,7 +202,7 @@ enum LessonLibrary {
         steps: noteSteps([(3, 0), (3, 2), (3, 0), (2, 2), (2, 0), (1, 3), (1, 0)]))
 
     static let all: [Lesson] = [openStrings, stringSwitching, lowToHigh, lowENotes, aStringNotes,
-                                chordA, chordE, chordD, chordG, chordC,
+                                chordEm, chordAm, chordE, chordA, chordD, chordG, chordC,
                                 changeEA, changeAD, changeGC,
                                 strumDown, strumKeep, firstSong,
                                 chordF, chordBm, changeFC, palmMute, fasterStrum,
@@ -289,9 +299,10 @@ enum CourseLibrary {
 
     static let firstChords = Course(
         id: "first-chords", title: "First Chords",
-        subtitle: "Tier 1 · A E D G C", tier: 1,
-        lessons: [LessonLibrary.chordA, LessonLibrary.chordE, LessonLibrary.chordD,
-                  LessonLibrary.chordG, LessonLibrary.chordC])
+        subtitle: "Tier 1 · Em Am E A D G C", tier: 1,
+        lessons: [LessonLibrary.chordEm, LessonLibrary.chordAm, LessonLibrary.chordE,
+                  LessonLibrary.chordA, LessonLibrary.chordD, LessonLibrary.chordG,
+                  LessonLibrary.chordC])
 
     static let chordChanges = Course(
         id: "chord-changes", title: "Chord Changes",
@@ -322,8 +333,10 @@ enum CourseLibrary {
         lessons: [], comingSoon: true)
 
     /// The full skill-graph map, tier 0 → 5 (3–5 are locked placeholders).
-    static let all: [Course] = [firstContact, firstNotes, firstChords, chordChanges, strumming,
-                                barreRhythm, leadBasics, intermediate]
+    // Chords-first: First Chords sits right after First Contact; First Notes
+    // (single-note fretting) is now a parallel side-track ahead of lead work.
+    static let all: [Course] = [firstContact, firstChords, chordChanges, strumming,
+                                firstNotes, barreRhythm, leadBasics, intermediate]
 
     static func isUnlocked(_ course: Course, completed: Set<String>) -> Bool {
         guard !course.comingSoon else { return false }
