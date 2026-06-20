@@ -42,6 +42,10 @@ struct Lesson: Identifiable, Hashable {
     /// (e.g. a song that needs several specific chords), not a single chain.
     var prerequisites: [String] = []
     let steps: [LessonStep]
+    /// Whether finishing this lesson records mastery/SRS/tempo. False for
+    /// ephemeral, generated drills (e.g. the interleaved mix) so they don't
+    /// pollute progress with a synthetic lesson id.
+    var tracksProgress = true
 }
 
 struct Course: Identifiable, Hashable {

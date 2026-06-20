@@ -13,6 +13,7 @@ struct LearnHomeView: View {
     @State private var showStats = false
     @State private var showReview = false
     @State private var showSession = false
+    @State private var mixLesson: Lesson?
     private let store = ProgressStore.shared
 
     var body: some View {
@@ -28,6 +29,8 @@ struct LearnHomeView: View {
                             if session.count > 1 { todaysPracticeCard(steps: session.count) }
                             let dueCount = store.dueForReview().count
                             if dueCount > 0 { dueReviewCard(count: dueCount) }
+                            let mixPool = InterleavedDrill.pool(completed: store.completedLessonIDs)
+                            if mixPool.count >= InterleavedDrill.minPool { mixCard(poolSize: mixPool.count) }
                             playAlongCard
                             highwayCard
                             ForEach(CourseLibrary.all) { course in
@@ -59,6 +62,9 @@ struct LearnHomeView: View {
         .fullScreenCover(isPresented: $showReview) {
             ReviewSessionView(lessonIDs: store.dueForReview()) { showReview = false }
         }
+        .fullScreenCover(item: $mixLesson) { lesson in
+            LessonView(lesson: lesson) { mixLesson = nil }
+        }
         .sheet(isPresented: $showStats) { StatsView { showStats = false } }
         .onAppear {
             store.refreshStreak()
@@ -80,6 +86,9 @@ struct LearnHomeView: View {
             }
             if ProcessInfo.processInfo.environment["PICKUP_SESSION"] != nil {
                 showSession = true
+            }
+            if ProcessInfo.processInfo.environment["PICKUP_MIX"] != nil {
+                mixLesson = InterleavedDrill.lesson(completed: store.completedLessonIDs)
             }
             if ProcessInfo.processInfo.environment["PICKUP_PLAYALONG"] != nil {
                 showPlayAlong = true
@@ -177,6 +186,30 @@ struct LearnHomeView: View {
                                          startPoint: .top, endPoint: .bottom))
             )
             .shadow(color: Theme.teal.opacity(0.4), radius: 16, y: 6)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func mixCard(poolSize: Int) -> some View {
+        Button { mixLesson = InterleavedDrill.lesson(completed: store.completedLessonIDs) } label: {
+            HStack(spacing: 16) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(Theme.cyan.opacity(0.9)).frame(width: 58, height: 58)
+                    Image(systemName: "shuffle").font(.system(size: 23, weight: .semibold))
+                        .foregroundStyle(Color(hex: 0x06222A))
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Mixed Chords").font(Theme.display(23)).foregroundStyle(.white)
+                    Text("Shuffle \(poolSize) chords you know — build recall")
+                        .font(Theme.body(14)).foregroundStyle(Theme.frost.opacity(0.75))
+                }
+                Spacer()
+                Image(systemName: "chevron.right").foregroundStyle(Theme.frost.opacity(0.6))
+            }
+            .padding(18)
+            .background(RoundedRectangle(cornerRadius: 22, style: .continuous).fill(Theme.cyan.opacity(0.12)))
+            .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(Theme.cyan.opacity(0.4), lineWidth: 1))
         }
         .buttonStyle(.plain)
     }

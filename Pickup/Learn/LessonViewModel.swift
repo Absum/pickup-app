@@ -252,10 +252,12 @@ final class LessonViewModel {
         } else {
             isComplete = true
             lastRunScore = runStepCount > 0 ? runQualitySum / Double(runStepCount) : 1
-            store.recordRun(lesson.id, score: lastRunScore)   // mastery EMA; unlocks at threshold
-            if lesson.steps.contains(where: { $0.strum != nil }) {
-                // Accuracy before speed: a clean timed run earns a faster tempo next time.
-                store.recordTempoResult(lesson.id, score: lastRunScore)
+            if lesson.tracksProgress {
+                store.recordRun(lesson.id, score: lastRunScore)   // mastery EMA; unlocks at threshold
+                if lesson.steps.contains(where: { $0.strum != nil }) {
+                    // Accuracy before speed: a clean timed run earns a faster tempo next time.
+                    store.recordTempoResult(lesson.id, score: lastRunScore)
+                }
             }
             audio.stop()
         }
