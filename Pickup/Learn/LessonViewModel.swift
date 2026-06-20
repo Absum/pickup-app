@@ -89,6 +89,9 @@ final class LessonViewModel {
     var mastery: Double { store.mastery(of: lesson.id) }
     var isMastered: Bool { mastery >= ProgressStore.masteryThreshold }
 
+    /// How much hand-holding to show: fades as the lesson is mastered.
+    var scaffold: ScaffoldLevel { Scaffold.level(forMastery: mastery) }
+
     func startListening() {
         AVAudioApplication.requestRecordPermission { [weak self] granted in
             DispatchQueue.main.async {

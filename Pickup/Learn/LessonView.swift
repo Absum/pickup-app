@@ -17,6 +17,12 @@ struct LessonView: View {
 
     private var inTune: Bool { model.feedback == .correct }
 
+    /// Temporary reveal of a faded prompt ("Show shape") in from-memory mode.
+    @State private var peeking = false
+    private var showsDiagram: Bool { model.scaffold.showsDiagram || peeking }
+    private var showsFingerNumbers: Bool { model.scaffold.showsFingerNumbers || peeking }
+    private var showsHint: Bool { model.scaffold != .fromMemory }
+
     var body: some View {
         ZStack {
             ArcticBackground(glow: inTune || model.isComplete)
@@ -25,6 +31,25 @@ struct LessonView: View {
         .preferredColorScheme(.dark)
         .onAppear { model.startListening() }
         .onDisappear { model.stopListening() }
+        .onChange(of: model.currentStep.id) { _, _ in peeking = false }   // re-fade each step
+    }
+
+    /// Shown in place of a faded prompt: a "from memory" badge with a peek escape.
+    private var fromMemoryBadge: some View {
+        VStack(spacing: 14) {
+            HStack(spacing: 7) {
+                Image(systemName: "brain.head.profile").font(.system(size: 13))
+                Text("FROM MEMORY").font(Theme.title(13)).tracking(2)
+            }
+            .foregroundStyle(Theme.frost.opacity(0.7))
+            .padding(.horizontal, 16).frame(height: 36)
+            .background(Capsule().fill(.white.opacity(0.06)))
+            .overlay(Capsule().stroke(.white.opacity(0.12), lineWidth: 1))
+            Button { withAnimation(.snappy) { peeking = true } } label: {
+                Text("Show shape").font(Theme.body(14)).foregroundStyle(Theme.cyan)
+            }
+            .buttonStyle(.plain)
+        }
     }
 
     // MARK: - Practice
@@ -41,9 +66,13 @@ struct LessonView: View {
                 } else {
                     targetNote
                     if let position = model.currentStep.position {
-                        FretboardDiagram(positions: [position])
-                            .frame(width: 236, height: 138)
-                            .padding(.top, 14)
+                        if showsDiagram {
+                            FretboardDiagram(positions: [position])
+                                .frame(width: 236, height: 138)
+                                .padding(.top, 14)
+                        } else {
+                            fromMemoryBadge.frame(height: 138).padding(.top, 14)
+                        }
                     }
                 }
                 hearItButton.padding(.top, 14)
@@ -64,9 +93,13 @@ struct LessonView: View {
                 Text(chord.name)
                     .font(.custom("Rajdhani-SemiBold", size: 56))
                     .foregroundStyle(model.feedback == .correct ? Theme.teal : .white)
-                FretboardDiagram(positions: chord.positions, mutedStrings: chord.mutedStrings,
-                                 barre: chord.barre, showFingers: true)
-                    .frame(width: 286, height: 232).padding(.top, 6)   // match the chord-practice screen
+                if showsDiagram {
+                    FretboardDiagram(positions: chord.positions, mutedStrings: chord.mutedStrings,
+                                     barre: chord.barre, showFingers: showsFingerNumbers)
+                        .frame(width: 286, height: 232).padding(.top, 6)   // match the chord-practice screen
+                } else {
+                    fromMemoryBadge.frame(width: 286, height: 232).padding(.top, 6)
+                }
             }
             tempoPill.padding(.top, 16)
             beatIndicator.padding(.top, 14)
@@ -192,8 +225,10 @@ struct LessonView: View {
                         .foregroundStyle(Theme.frost.opacity(0.7))
                 }
             }
-            Text(model.currentStep.hint)
-                .font(Theme.body(16)).foregroundStyle(Theme.frost.opacity(0.8))
+            if showsHint {
+                Text(model.currentStep.hint)
+                    .font(Theme.body(16)).foregroundStyle(Theme.frost.opacity(0.8))
+            }
         }
         .animation(.snappy, value: inTune)
         .animation(.snappy, value: model.currentStep.id)
@@ -205,11 +240,17 @@ struct LessonView: View {
                 .font(.custom("Rajdhani-SemiBold", size: 64))
                 .foregroundStyle(inTune ? Theme.teal : .white)
                 .shadow(color: inTune ? Theme.teal.opacity(0.7) : .clear, radius: 18)
-            FretboardDiagram(positions: chord.positions, mutedStrings: chord.mutedStrings,
-                             barre: chord.barre, showFingers: true)
-                .frame(width: 286, height: 232)   // match the chord-practice screen
-            Text(model.currentStep.hint)
-                .font(Theme.body(16)).foregroundStyle(Theme.frost.opacity(0.8))
+            if showsDiagram {
+                FretboardDiagram(positions: chord.positions, mutedStrings: chord.mutedStrings,
+                                 barre: chord.barre, showFingers: showsFingerNumbers)
+                    .frame(width: 286, height: 232)   // match the chord-practice screen
+            } else {
+                fromMemoryBadge.frame(width: 286, height: 232)
+            }
+            if showsHint {
+                Text(model.currentStep.hint)
+                    .font(Theme.body(16)).foregroundStyle(Theme.frost.opacity(0.8))
+            }
         }
         .animation(.snappy, value: inTune)
         .animation(.snappy, value: model.currentStep.id)
@@ -231,31 +272,53 @@ struct LessonView: View {
 
     private var detectedLine: some View {
         Group {
-            if model.currentStep.chord != nil {
-                switch model.feedback {
-                case .correct:
-                    Text("Nice — hold it").foregroundStyle(Theme.teal)
-                case .close:
-                    Text(model.detectedLabel ?? "Almost — keep the shape")
-                        .foregroundStyle(Theme.frost.opacity(0.85))
-                case .waiting:
-                    Text(model.detectedLabel ?? "Strum the chord")
-                        .foregroundStyle(Theme.frost.opacity(0.6))
-                }
+            if model.scaffold.showsContinuousFeedback {
+                continuousFeedback
             } else {
-                switch model.feedback {
-                case .correct:
-                    Text("Nice — hold it").foregroundStyle(Theme.teal)
-                case .close:
-                    Text(model.detectedLabel.map { "You're playing \($0) — adjust" } ?? "Almost")
-                        .foregroundStyle(Theme.frost.opacity(0.85))
-                case .waiting:
-                    Text(model.detectedLabel.map { "Heard \($0)" } ?? "Play the note")
-                        .foregroundStyle(Theme.frost.opacity(0.6))
-                }
+                thinFeedback   // from memory: flag errors only
             }
         }
         .font(Theme.title(17)).tracking(1)
+    }
+
+    @ViewBuilder private var continuousFeedback: some View {
+        if model.currentStep.chord != nil {
+            switch model.feedback {
+            case .correct:
+                Text("Nice — hold it").foregroundStyle(Theme.teal)
+            case .close:
+                Text(model.detectedLabel ?? "Almost — keep the shape")
+                    .foregroundStyle(Theme.frost.opacity(0.85))
+            case .waiting:
+                Text(model.detectedLabel ?? "Strum the chord")
+                    .foregroundStyle(Theme.frost.opacity(0.6))
+            }
+        } else {
+            switch model.feedback {
+            case .correct:
+                Text("Nice — hold it").foregroundStyle(Theme.teal)
+            case .close:
+                Text(model.detectedLabel.map { "You're playing \($0) — adjust" } ?? "Almost")
+                    .foregroundStyle(Theme.frost.opacity(0.85))
+            case .waiting:
+                Text(model.detectedLabel.map { "Heard \($0)" } ?? "Play the note")
+                    .foregroundStyle(Theme.frost.opacity(0.6))
+            }
+        }
+    }
+
+    /// From-memory feedback bandwidth: stay quiet while it's right or waiting,
+    /// only speak up to flag a wrong note/shape so the learner self-corrects.
+    @ViewBuilder private var thinFeedback: some View {
+        switch model.feedback {
+        case .close:
+            Text(model.currentStep.chord != nil
+                 ? (model.detectedLabel ?? "Not quite — adjust the shape")
+                 : (model.detectedLabel.map { "That's \($0) — adjust" } ?? "Adjust"))
+                .foregroundStyle(Theme.frost.opacity(0.85))
+        case .correct, .waiting:
+            Color.clear.frame(height: 1)
+        }
     }
 
     private var prompt: some View {
