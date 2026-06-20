@@ -11,7 +11,7 @@ final class CourseTests: XCTestCase {
         XCTAssertEqual(CourseLibrary.all.count, 8)   // 5 playable + 3 coming-soon (tiers 3–5)
         XCTAssertEqual(CourseLibrary.firstContact.lessons.count, 3)
         XCTAssertEqual(CourseLibrary.firstNotes.lessons.count, 2)
-        XCTAssertEqual(CourseLibrary.firstChords.lessons.count, 7)   // Em Am E A D G C
+        XCTAssertEqual(CourseLibrary.firstChords.lessons.count, 8)   // Em Am, song, E A D G C
         XCTAssertEqual(CourseLibrary.chordChanges.lessons.count, 3)
         XCTAssertEqual(CourseLibrary.strumming.lessons.count, 3)
     }
@@ -58,6 +58,9 @@ final class CourseTests: XCTestCase {
         // Easiest chords come first.
         XCTAssertEqual(CourseLibrary.firstChords.lessons.first?.id, "chord-em")
         XCTAssertEqual(CourseLibrary.firstChords.lessons.last?.id, "chord-c")
+        // A 2-chord song lands after the first two chords and gates the rest.
+        XCTAssertTrue(CourseLibrary.firstChords.lessons.contains { $0.id == "song-em-am" })
+        XCTAssertEqual(LessonLibrary.chordE.prerequisite, "song-em-am")
     }
 
     func testChordsUnlockRightAfterOpenStrings() {

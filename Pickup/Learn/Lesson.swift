@@ -112,9 +112,15 @@ enum LessonLibrary {
         id: "chord-am", title: "The A Minor Chord", subtitle: "Same shape, moved over a string",
         tier: 1, prerequisite: "chord-em", steps: chordSteps(["Am", "Am", "Am"]))
 
+    /// Session-1 payoff: play a real two-chord progression with the first two chords
+    /// you learned — the early win that carries a beginner through sore fingertips.
+    static let songEmAm = Lesson(
+        id: "song-em-am", title: "Your First Song", subtitle: "Em & Am — your first progression",
+        tier: 1, prerequisite: "chord-am", steps: chordSteps(["Em", "Am", "Em", "Am", "Em", "Am"]))
+
     static let chordE = Lesson(
         id: "chord-e", title: "The E Chord", subtitle: "A full, ringing chord",
-        tier: 1, prerequisite: "chord-am", steps: chordSteps(["E", "E", "E"]))
+        tier: 1, prerequisite: "song-em-am", steps: chordSteps(["E", "E", "E"]))
 
     static let chordA = Lesson(
         id: "chord-a", title: "The A Chord", subtitle: "Three fingers, top five strings",
@@ -157,7 +163,7 @@ enum LessonLibrary {
         tier: 2, prerequisite: "strum-down", steps: strumSteps([("A", 80, 8)]))
 
     static let firstSong = Lesson(
-        id: "first-song", title: "Your First Song", subtitle: "Em–C–G–D, a bar each",
+        id: "first-song", title: "Four-Chord Song", subtitle: "Em–C–G–D strummed in time",
         tier: 2, prerequisite: "strum-keep",
         steps: strumSteps([("Em", 80, 4), ("C", 80, 4), ("G", 80, 4), ("D", 80, 4)]))
 
@@ -202,7 +208,7 @@ enum LessonLibrary {
         steps: noteSteps([(3, 0), (3, 2), (3, 0), (2, 2), (2, 0), (1, 3), (1, 0)]))
 
     static let all: [Lesson] = [openStrings, stringSwitching, lowToHigh, lowENotes, aStringNotes,
-                                chordEm, chordAm, chordE, chordA, chordD, chordG, chordC,
+                                chordEm, chordAm, songEmAm, chordE, chordA, chordD, chordG, chordC,
                                 changeEA, changeAD, changeGC,
                                 strumDown, strumKeep, firstSong,
                                 chordF, chordBm, changeFC, palmMute, fasterStrum,
@@ -300,9 +306,9 @@ enum CourseLibrary {
     static let firstChords = Course(
         id: "first-chords", title: "First Chords",
         subtitle: "Tier 1 · Em Am E A D G C", tier: 1,
-        lessons: [LessonLibrary.chordEm, LessonLibrary.chordAm, LessonLibrary.chordE,
-                  LessonLibrary.chordA, LessonLibrary.chordD, LessonLibrary.chordG,
-                  LessonLibrary.chordC])
+        lessons: [LessonLibrary.chordEm, LessonLibrary.chordAm, LessonLibrary.songEmAm,
+                  LessonLibrary.chordE, LessonLibrary.chordA, LessonLibrary.chordD,
+                  LessonLibrary.chordG, LessonLibrary.chordC])
 
     static let chordChanges = Course(
         id: "chord-changes", title: "Chord Changes",
