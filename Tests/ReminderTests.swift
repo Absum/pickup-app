@@ -1,6 +1,6 @@
 //
 //  ReminderTests.swift
-//  Next-fire-date logic for the daily streak reminder.
+//  Next-fire-date logic + review-due copy for the daily reminder.
 //
 
 import XCTest
@@ -35,31 +35,38 @@ final class ReminderTests: XCTestCase {
         XCTAssertEqual(cal.component(.day, from: fire), 16)
     }
 
-    // MARK: - Message tiers
+    // MARK: - Message tiers (review-due framing)
 
-    func testActiveStreakMessage() {
-        let m = ReminderScheduler.message(streak: 4, bestStreak: 9, daysAway: 0)
-        XCTAssertTrue(m.body.contains("4-day streak"))
+    func testReviewDueIsThePrimaryNudge() {
+        let m = ReminderScheduler.message(due: 3, skillsLearned: 9, daysAway: 0)
+        XCTAssertEqual(m.title, "Time for a quick review")
+        XCTAssertTrue(m.body.contains("3 skills are due"))
+        XCTAssertFalse(m.body.lowercased().contains("streak"))   // no streak framing
     }
 
-    func testStartMessageWhenNeverPlayed() {
-        let m = ReminderScheduler.message(streak: 0, bestStreak: 0, daysAway: nil)
-        XCTAssertEqual(m.title, "Start a streak")
+    func testReviewDueSingularGrammar() {
+        let m = ReminderScheduler.message(due: 1, skillsLearned: 5, daysAway: 1)
+        XCTAssertTrue(m.body.contains("1 skill is due"))
     }
 
-    func testWinBackEarly() {
-        let m = ReminderScheduler.message(streak: 0, bestStreak: 12, daysAway: 3)
-        XCTAssertEqual(m.title, "It's not too late")
-        XCTAssertTrue(m.body.contains("12-day best"))
+    func testStartMessageWhenNothingLearned() {
+        let m = ReminderScheduler.message(due: 0, skillsLearned: 0, daysAway: nil)
+        XCTAssertEqual(m.title, "Pick up the guitar")
     }
 
-    func testWinBackMid() {
-        let m = ReminderScheduler.message(streak: 0, bestStreak: 12, daysAway: 8)
-        XCTAssertEqual(m.title, "Your streak's waiting")
+    func testNothingDueButLearnedInvitesNewSkill() {
+        let m = ReminderScheduler.message(due: 0, skillsLearned: 6, daysAway: 1)
+        XCTAssertEqual(m.title, "Ready for more?")
     }
 
-    func testWinBackLongLapse() {
-        let m = ReminderScheduler.message(streak: 0, bestStreak: 12, daysAway: 30)
-        XCTAssertEqual(m.title, "Your guitar misses you")
+    func testLapsedWithDueEscalatesToOverdue() {
+        let m = ReminderScheduler.message(due: 4, skillsLearned: 9, daysAway: 10)
+        XCTAssertEqual(m.title, "Your skills are slipping")
+        XCTAssertTrue(m.body.contains("overdue"))
+    }
+
+    func testLapsedWithNothingDueKeepsSkillsSharp() {
+        let m = ReminderScheduler.message(due: 0, skillsLearned: 6, daysAway: 10)
+        XCTAssertEqual(m.title, "Keep your skills sharp")
     }
 }

@@ -1,7 +1,7 @@
 //
 //  ReminderScheduler.swift
-//  The streak's engagement loop: a local daily reminder that nudges the user
-//  back before their streak breaks. Streak-aware copy, and it skips a day the
+//  The spacing loop: a local daily reminder pointed at skills due for review
+//  (spaced repetition needs regular sessions), not the streak. Skips a day the
 //  user has already practiced. No backend.
 //
 
@@ -48,9 +48,10 @@ final class ReminderScheduler {
         guard enabled else { return }
 
         let store = ProgressStore.shared
-        store.refreshStreak(now)          // make sure a lapse is reflected
+        store.refreshStreak(now)          // streak still tracked for stats
         let practicedToday = store.isActiveToday(now)
-        let msg = Self.message(streak: store.currentStreak, bestStreak: store.bestStreak,
+        let msg = Self.message(due: store.dueForReview(on: now).count,
+                               skillsLearned: store.completedLessonIDs.count,
                                daysAway: store.daysSinceActive(now))
         let hour = self.hour, minute = self.minute
 
@@ -72,30 +73,37 @@ final class ReminderScheduler {
         }
     }
 
-    /// Reminder copy, chosen by where the player is: keeping a live streak,
-    /// just starting, or winning back after a lapse (escalating by time away).
-    static func message(streak: Int, bestStreak: Int, daysAway: Int?) -> (title: String, body: String) {
-        // On an active streak — the "don't lose it" nudge.
-        if streak > 0 {
-            return ("Keep your streak alive",
-                    "🔥 You're on a \(streak)-day streak — play something today to keep it going.")
+    /// Reminder copy framed around spaced repetition: lead with skills due for
+    /// review (escalating once they're overdue), nudge a first session if the
+    /// user hasn't learned anything, or invite the next new skill when nothing's
+    /// due. No streak framing — spacing, not a counter, is the reason to return.
+    static func message(due: Int, skillsLearned: Int, daysAway: Int?) -> (title: String, body: String) {
+        let lapsed = (daysAway ?? 0) >= 5
+
+        // Skills are due for review — the core spacing nudge.
+        if due > 0 {
+            let s = due == 1 ? "skill is" : "skills are"
+            if lapsed {
+                return ("Your skills are slipping",
+                        "🎸 \(due) \(s) overdue for review — a few minutes today brings them back.")
+            }
+            return ("Time for a quick review",
+                    "🎸 \(due) \(s) due for review — a few minutes today keeps them sharp.")
         }
-        // Never played, or no past streak to win back.
-        guard let days = daysAway, bestStreak > 0 else {
-            return ("Start a streak", "🎸 Play something today and start your streak.")
+
+        // Nothing due, and nothing learned yet — get the first session in.
+        guard skillsLearned > 0 else {
+            return ("Pick up the guitar",
+                    "🎸 Play your first chord today — it only takes a few minutes.")
         }
-        // Lapsed — escalate the win-back the longer they've been gone.
-        switch days {
-        case ...4:
-            return ("It's not too late",
-                    "🎸 Your \(bestStreak)-day best is right there — pick it back up today.")
-        case 5...13:
-            return ("Your streak's waiting",
-                    "Miss playing? Your \(bestStreak)-day best is waiting — 5 minutes today gets you rolling.")
-        default:
-            return ("Your guitar misses you",
-                    "🎸 It's been a while — even one riff counts. Come back today.")
+
+        // Learned skills, nothing due right now.
+        if lapsed {
+            return ("Keep your skills sharp",
+                    "🎸 It's been a while — a short session keeps what you've learned solid.")
         }
+        return ("Ready for more?",
+                "🎸 Nothing due to review — learn something new today.")
     }
 
     /// The next moment the reminder should fire: today at the set time if it

@@ -157,7 +157,7 @@ struct SettingsView: View {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("DAILY REMINDER").font(Theme.display(18)).tracking(2).foregroundStyle(.white)
-                    Text("A nudge to keep your streak alive.")
+                    Text("A nudge to review what's due and keep your skills sharp.")
                         .font(Theme.body(13)).foregroundStyle(Theme.frost.opacity(0.65))
                 }
                 Spacer()
